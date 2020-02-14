@@ -5,6 +5,7 @@
 #include <RTClib.h>
 
 #include "main.h"
+#include "digit.h"
 
 Max72xxPanel matrix = Max72xxPanel(9, 1, 4);
 RTC_DS3231 rtc;
