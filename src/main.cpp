@@ -18,9 +18,8 @@ RTC_DS3231 rtc;
 OneButton button1(BUTT_1_PIN, false);
 OneButton button2(BUTT_2_PIN, false);
 
-MainMode main_mode = mmClock;
+MainMode main_mode = mmPower;
 
-const String week_days_name[7] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}; // Дни недели
 bool show_dots;
 unsigned long timer;
 
@@ -98,7 +97,6 @@ void showDisp() {
     }break;
 
     case mmPower: {
-      
     }break;
   }
 
@@ -135,7 +133,4 @@ void loop() {
     showDisp();
   }
 
-  float voltage = analogRead(A2);
-  float volt_1 = map(voltage, 500, 520, 5, 0);
-  Serial.println(volt_1);
 }
