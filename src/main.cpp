@@ -8,6 +8,8 @@
 
 #include "main.h"
 #include "digit.h"
+#include "power.h"
+
 
 // TODO: Добавить датчик температуры
 // TODO: Сделать эффект перехода между страницами
@@ -17,6 +19,7 @@ Max72xxPanel matrix = Max72xxPanel(MATRIX_CS_PIN, 1, 4);
 RTC_DS3231 rtc;
 OneButton button1(BUTT_1_PIN, false);
 OneButton button2(BUTT_2_PIN, false);
+Power battery(POWER_SENSOR_PIN);
 
 MainMode main_mode = mmPower;
 
