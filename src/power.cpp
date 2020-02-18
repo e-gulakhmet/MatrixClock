@@ -4,8 +4,6 @@
 
 Power::Power(uint8_t pin)
     : pin_(pin)
-    , voltage_(0)
-    , procent_(0)
     , min_volt_(3.3)
     , max_volt_(5)
     {
@@ -14,8 +12,16 @@ Power::Power(uint8_t pin)
 
 
 
-void Power::update() {
+float Power::getVoltage() {
+    float volt = (readAnalog() * readFilterVcc()) / 1023;
+    return volt;
+}
 
+
+
+uint8_t Power::getProcent() {
+    uint8_t proc = map(getVoltage(), min_volt_, max_volt_, 0, 100);
+    return proc;
 }
 
 
@@ -37,7 +43,7 @@ void Power::setMaxVolt(uint8_t max_volt) {
 
 
 
-float Power::readVcc() {
+float Power::readFilterVcc() {
     // read multiple values and sort them to take the mode
     float sortedValues[100];
     for (int i = 0; i < 100; i++) {
@@ -109,3 +115,6 @@ float Power::readAnalog() {
     }
     return returnval / 10;
 }
+
+
+
