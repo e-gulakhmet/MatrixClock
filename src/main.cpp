@@ -25,6 +25,7 @@ MainMode main_mode = mmPower;
 
 bool show_dots;
 unsigned long timer;
+unsigned long batt_timer;
 
 
 
@@ -33,8 +34,8 @@ MainMode switchMainMode(MainMode curr, bool clockwice) { // Переключен
 
   n += clockwice ? 1 : -1; // Если по часовой стрелке, то ставим следующий
 
-  if ( n > 2) {
-    n = 2;
+  if ( n > 3) {
+    n = 3;
   }
   if ( n < 0 ) {
     n = 0;
@@ -60,6 +61,10 @@ void butt2Click() {
 
 
 void drawNum(uint8_t num, uint8_t num_len, const byte numbers[10][8], uint8_t x, uint8_t y) { // Функция для вывода цифр
+  // Первый параметр - цифра, которую хотим вывести.
+  // Второй параметр - цифра, которая указывает длину цифры(смотреть в digit.h)
+  // Третий параметр - массив в котором содержатся цифры
+  // Четвертый и пятый парамерт - расположение цифр
   for (int r = 0; r <= 7; r++) {
     for (int c = 0; c <= num_len; c++) {
       matrix.drawPixel(x + c, y + r, numbers[num][r] & (1 << c));
@@ -99,7 +104,14 @@ void showDisp() {
     case mmTemp: {
     }break;
 
-    case mmPower: {
+    case mmPower: { // Выводим данные о батареи
+      if (battery.getProcent() == 100) {
+        drawNum(battery.getProcent() / 100, 4, small_numbers, 0, 0);
+        drawNum(0, 4, small_numbers, 5, 0);
+        drawNum(0, 4, small_numbers, 10, 0);
+      }
+        drawNum(battery.getProcent() / 10, 4, small_numbers, 5, 0);
+        drawNum(battery.getProcent() % 10, 4, small_numbers, 10, 0);
     }break;
   }
 
@@ -121,9 +133,11 @@ void setup() {
   }
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // Устанавливаем время, которое указанно на компьютере
 
-  matrix.setIntensity(10);                    // Задаем яркость от 0 до 15
+  matrix.setIntensity(10); // Задаем яркость от 0 до 15
   matrix.setRotation(3);
-  matrix.fillScreen(LOW);                       // Обнуление матрицы
+  matrix.fillScreen(LOW); // Обнуление матрицу
+
+  battery.update(); // Получаем данные о батареи
 }
 
 
@@ -131,6 +145,10 @@ void setup() {
 void loop() {
   button1.tick();
   button2.tick();
+  if (millis() - batt_timer > 300000) { // Получаем данные о батареи раз в 5 минут
+    batt_timer = millis();
+    battery.update();
+  }  
   if (millis() - timer > 1000) {
     timer = millis();
     showDisp();

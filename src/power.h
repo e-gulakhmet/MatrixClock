@@ -3,25 +3,30 @@
 
 #include <Arduino.h>
 
+/*
+Класс возвращающий данные о напряжении батареи.
+*/
 
 
 class Power{
     public:
         Power(uint8_t pin);
-        void update();
-        float getVoltage();
-        uint8_t getProcent();
-        void setMinVolt(uint8_t min_volt);
-        void setMaxVolt(uint8_t max_volt);
+        void update(); // Собираем информацию
+        float getVoltage() {return voltage_;}; // Функция получения напряжения
+        uint8_t getProcent() {return procent_;}; // Функция получаения процента заряда
+        void setMinVolt(float min_volt); // Функция установки максимального напряжения
+        void setMaxVolt(float max_volt); // Функция установки минимального напряжения
     
     private:
-        float readFilterVcc(); 
+        float readFilterVcc(); // Фильтр для снижения количества шупом
         float readAnalog(); // Функция считывания опорного напряжения
 
 
         uint8_t pin_;
-        uint8_t min_volt_;
-        uint8_t max_volt_;
+        float voltage_;
+        uint8_t procent_;
+        float min_volt_;
+        float max_volt_;
 };
 
 

@@ -4,29 +4,26 @@
 
 Power::Power(uint8_t pin)
     : pin_(pin)
+    , voltage_(0)
+    , procent_(0)
     , min_volt_(3.3)
-    , max_volt_(5)
+    , max_volt_(5.0)
     {
         pinMode(pin_, INPUT);
     };
 
 
 
-float Power::getVoltage() {
-    float volt = (readAnalog() * readFilterVcc()) / 1023;
-    return volt;
+void Power::update() { 
+    // Синхронизируем полученные данные о напряжении с фильтром
+    voltage_ = (readAnalog() * readFilterVcc()) / 1023;
+    // Получаем процент заряда, зависящий от минимального напряжения и максимального
+    procent_ = (voltage_ - min_volt_) / (max_volt_ - min_volt_) * 100;
 }
 
 
 
-uint8_t Power::getProcent() {
-    uint8_t proc = map(getVoltage(), min_volt_, max_volt_, 0, 100);
-    return proc;
-}
-
-
-
-void Power::setMinVolt(uint8_t min_volt) {
+void Power::setMinVolt(float min_volt) {
     if (min_volt < 0) {
         min_volt_ = 0;
     }
@@ -37,7 +34,7 @@ void Power::setMinVolt(uint8_t min_volt) {
 
 
 
-void Power::setMaxVolt(uint8_t max_volt) {
+void Power::setMaxVolt(float max_volt) {
     max_volt_ = max_volt;
 }
 
@@ -50,12 +47,12 @@ float Power::readFilterVcc() {
         float tmp = 0.0;
         ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
         ADCSRA |= _BV(ADSC); // Start conversion
-        delay(25);
+        delay(5);
         while (bit_is_set(ADCSRA, ADSC)); // measuring
         uint8_t low = ADCL; // must read ADCL first - it then locks ADCH
         uint8_t high = ADCH; // unlocks both
         tmp = (high << 8) | low;
-        float value = (1.0 * 1023.0) / tmp;
+        float value = (1.17 * 1023.0) / tmp;
         int j;
         if (value < sortedValues[0] || i == 0) {
             j = 0; //insert at first position
@@ -87,8 +84,8 @@ float Power::readFilterVcc() {
 float Power::readAnalog() {
     // read multiple values and sort them to take the mode
     int sortedValues[100];
-    for (int i = 0; i < 100; i++) {
-        delay(25);    
+    for (int i = 0; i < 100; i++) { 
+        delay(5);
         int value = analogRead(pin_);
         int j;
         if (value < sortedValues[0] || i == 0) {
