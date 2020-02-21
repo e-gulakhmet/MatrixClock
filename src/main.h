@@ -7,6 +7,7 @@ const uint8_t BUTT_1_PIN = A0;
 const uint8_t BUTT_2_PIN = A1;
 const uint8_t MATRIX_CS_PIN = 10;
 const uint8_t POWER_SENSOR_PIN = A2;
+const uint8_t LIGHT_SENSOR_PIN = A3;
 
 typedef enum {
     mmClock,

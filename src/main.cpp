@@ -13,7 +13,7 @@
 #include "object.h"
 
 // TODO: Сделать эффект перехода между страницами
-
+// TODO: Добавить отключение экрана ночью
 
 Max72xxPanel matrix = Max72xxPanel(MATRIX_CS_PIN, 1, 4);
 RTC_DS3231 rtc;
@@ -23,11 +23,14 @@ DHT dht(2, DHT11);
 Power battery(POWER_SENSOR_PIN);
 
 MainMode main_mode = mmClock;
+DateTime time;
 
 bool show_dots;
-unsigned long timer;
+unsigned long disp_timer;
 unsigned long batt_timer;
+unsigned long bright_timer;
 bool second_object;
+
 
 
 
@@ -95,11 +98,10 @@ void showDisp() {
   switch (main_mode) {
     case mmClock: { // Выводим время на дисплей
       if (rtc.begin()) { // Если модуль времени подключен
-        DateTime now = rtc.now();
-        drawNum(now.hour() / 10, 6, numbers, 0, 0);
-        drawNum(now.hour() % 10, 6, numbers, 7, 0);
-        drawNum(now.minute() / 10, 6, numbers, 19, 0);
-        drawNum(now.minute() % 10, 6, numbers, 26, 0);
+        drawNum(time.hour() / 10, 6, numbers, 0, 0);
+        drawNum(time.hour() % 10, 6, numbers, 7, 0);
+        drawNum(time.minute() / 10, 6, numbers, 19, 0);
+        drawNum(time.minute() % 10, 6, numbers, 26, 0);
         // Выводим точки
         show_dots = !show_dots;
         matrix.drawRect(15, 1, 2, 2, show_dots);
@@ -111,16 +113,15 @@ void showDisp() {
     }break;
     
     case mmDate: { // Выводим дату на матрицу
-      DateTime now = rtc.now();
       show_dots = !show_dots;
-      drawNum(now.day() / 10, 4, small_numbers, 0, 0);
-      drawNum(now.day() % 10, 4, small_numbers, 5, 0);
+      drawNum(time.day() / 10, 4, small_numbers, 0, 0);
+      drawNum(time.day() % 10, 4, small_numbers, 5, 0);
       matrix.drawPixel(9, 7, show_dots);
-      drawNum(now.month() / 10, 4, small_numbers, 11, 0);
-      drawNum(now.month() % 10, 4, small_numbers, 16, 0);
+      drawNum(time.month() / 10, 4, small_numbers, 11, 0);
+      drawNum(time.month() % 10, 4, small_numbers, 16, 0);
       matrix.drawPixel(20, 7, show_dots);
-      drawNum((now.year() - 2000) / 10, 4, small_numbers, 22, 0);
-      drawNum((now.year() - 2000) % 10, 4, small_numbers, 27, 0);
+      drawNum((time.year() - 2000) / 10, 4, small_numbers, 22, 0);
+      drawNum((time.year() - 2000) % 10, 4, small_numbers, 27, 0);
     }break;
 
     case mmTemp: { // Выводим данные о погоде на матрицу
@@ -160,6 +161,7 @@ void showDisp() {
 void setup() {
   Serial.begin(9600);
   pinMode(POWER_SENSOR_PIN, INPUT);
+  pinMode(LIGHT_SENSOR_PIN, INPUT);
 
   button1.attachClick(butt1Click);
   button2.attachClick(butt2Click);
@@ -188,8 +190,22 @@ void loop() {
     batt_timer = millis();
     battery.update();
   }  
-  if (millis() - timer > 1000) {
-    timer = millis();
+  if (millis() - disp_timer > 1000) {
+    disp_timer = millis();
+    time = rtc.now();
     showDisp();
   }
+
+  if (millis() - bright_timer > 60000) {
+    bright_timer = millis();
+    int brightness = analogRead(LIGHT_SENSOR_PIN);
+    if (brightness > 850 && brightness <= 1100) {
+      matrix.setIntensity(6);
+    }
+    else {
+      matrix.setIntensity(12);
+    }
+  }
+
+
 }
