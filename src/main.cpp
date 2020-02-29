@@ -138,7 +138,6 @@ void showDisp() {
       else {
         drawObject(cloud[second_object], 8, 8, 21, 0);
       }
-
     }break;
 
     case mmPower: { // Выводим данные о батареи
@@ -147,12 +146,13 @@ void showDisp() {
         drawNum(0, 4, small_numbers, 13, 0);
         drawNum(0, 4, small_numbers, 18, 0);
       }
+      else {
         drawNum(battery.getProcent() / 10, 4, small_numbers, 8, 0);
         drawNum(battery.getProcent() % 10, 4, small_numbers, 13, 0);
+      }
         drawObject(procent, 6, 8, 18, 0);
     }break;
   }
-
   matrix.write();
 }
 
