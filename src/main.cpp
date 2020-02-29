@@ -6,6 +6,7 @@
 #include <RTClib.h>
 #include <OneButton.h>
 #include <DHT.h>
+#include <LowPower.h>
 
 #include "main.h"
 #include "digit.h"
@@ -17,19 +18,24 @@
 
 Max72xxPanel matrix = Max72xxPanel(MATRIX_CS_PIN, 1, 4);
 RTC_DS3231 rtc;
-OneButton button1(BUTT_1_PIN, false);
-OneButton button2(BUTT_2_PIN, false);
-DHT dht(2, DHT11); 
+OneButton left_butt(LEFT_BUTT_PIN, false);
+OneButton right_butt(RIGHT_BUTT_PIN, false);
+OneButton main_butt(MAIN_BUTT_PIN, false);
+DHT dht(A1, DHT11); 
 Power battery(POWER_SENSOR_PIN);
 
 MainMode main_mode = mmClock;
+PowerMode power_mode = pmPower;
 DateTime time;
 
 bool show_dots;
 unsigned long disp_timer;
 unsigned long batt_timer;
 unsigned long bright_timer;
+unsigned long wait_timer;
+bool is_waiting;
 bool second_object;
+bool is_active = true;
 
 
 
@@ -50,19 +56,31 @@ MainMode switchMainMode(MainMode curr, bool clockwice) { // Переключен
 
 
 
-void butt1Click() {
+void rightButtClick() {
   main_mode = switchMainMode(main_mode, true);
   matrix.fillScreen(LOW);
 }
 
 
 
-void butt2Click() {
+void leftButtClick() {
   main_mode = switchMainMode(main_mode, false);
   matrix.fillScreen(LOW);
 }
 
 
+
+void mainButtClick() {
+  
+}
+
+
+
+void wakeUp() {
+  is_waiting = true;
+  wait_timer = millis();
+  detachInterrupt(0);
+}
 
 
 void drawNum(uint8_t num, uint8_t num_len, const byte numbers[10][8], uint8_t x, uint8_t y) { // Функция для вывода цифр
@@ -132,7 +150,7 @@ void showDisp() {
       drawObject(C, 4, 8, 14, 0);
       second_object = !second_object;
       // Показываем погоду по температуре
-      if (int(dht.readTemperature()) / 10 > 25) {
+      if (int(dht.readTemperature()) > 24) {
         drawObject(sun[second_object], 7, 7, 21, 1);
       }
       else {
@@ -162,9 +180,11 @@ void setup() {
   Serial.begin(9600);
   pinMode(POWER_SENSOR_PIN, INPUT);
   pinMode(LIGHT_SENSOR_PIN, INPUT);
+  pinMode(MAIN_BUTT_PIN, INPUT);
 
-  button1.attachClick(butt1Click);
-  button2.attachClick(butt2Click);
+  left_butt.attachClick(leftButtClick);
+  right_butt.attachClick(rightButtClick);
+  main_butt.attachClick(mainButtClick);
 
   if (! rtc.begin()) { // Подключаемся к ds3231
     Serial.println("Couldn't find RTC");
@@ -184,8 +204,9 @@ void setup() {
 
 
 void loop() {
-  button1.tick();
-  button2.tick();
+  left_butt.tick();
+  main_butt.tick();
+  right_butt.tick();
   if (millis() - batt_timer > 300000) { // Получаем данные о батареи раз в 5 минут
     batt_timer = millis();
     battery.update();
@@ -194,16 +215,31 @@ void loop() {
     disp_timer = millis();
     time = rtc.now();
     showDisp();
-  }
-
-  if (millis() - bright_timer > 60000) {
-    bright_timer = millis();
     int brightness = analogRead(LIGHT_SENSOR_PIN);
     if (brightness > 850 && brightness <= 1100) {
       matrix.setIntensity(6);
     }
     else {
-      matrix.setIntensity(12);
+      matrix.setIntensity(10);
+    }
+  }
+
+  if (is_waiting) {
+    if (millis() - wait_timer > 900000) {
+      wait_timer = millis();
+      is_waiting = false;
+    }
+  }
+  else {
+    switch (power_mode) {
+      case pmPower: {
+        if (time.hour() >= 0 && time.hour() <= 8 && analogRead(LIGHT_SENSOR_PIN) > 850) {
+          matrix.fillScreen(LOW);
+          matrix.write();
+          attachInterrupt(0, wakeUp, HIGH);
+          LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+        }
+      } break;
     }
   }
 
