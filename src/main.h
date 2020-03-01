@@ -14,8 +14,7 @@ typedef enum {
     mmClock,
     mmDate,
     mmTemp,
-    mmPower,
-    mmSetting
+    mmPower
 } MainMode;
 
 typedef enum {

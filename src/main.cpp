@@ -32,9 +32,9 @@ bool show_dots;
 unsigned long disp_timer;
 unsigned long batt_timer;
 unsigned long wait_timer;
+unsigned long dots_timer;
 bool is_waiting;
 bool second_object;
-bool is_active = true;
 bool is_setting;
 uint8_t sett_mode;
 int set_year;
@@ -43,8 +43,6 @@ uint8_t set_day;
 uint8_t set_hour;
 uint8_t set_minute;
 uint8_t set_second;
-
-
 
 
 
@@ -73,11 +71,11 @@ void rightButtClick() {
   }
   else if (is_setting){
     switch (sett_mode) {
-      case 0: set_day++; break;
-      case 1: set_month++; break;
-      case 2: set_year++; break;
-      case 3: set_hour++; break;
-      case 4: set_minute++; break;
+      case 0: set_hour++; break;
+      case 1: set_minute++; break;
+      case 2: set_day++; break;
+      case 3: set_month++; break;
+      case 4: set_year++; break;
     }
   }
 }
@@ -89,11 +87,11 @@ void leftButtClick() {
   }
   else if (is_setting){
     switch (sett_mode) {
-      case 0: set_day--; break;
-      case 1: set_month--; break;
-      case 2: set_year--; break;
-      case 3: set_hour--; break;
-      case 4: set_minute--; break;
+      case 0: set_hour--; break;
+      case 1: set_minute--; break;
+      case 2: set_day--; break;
+      case 3: set_month--; break;
+      case 4: set_year--; break;
     }
   }
 }
@@ -130,6 +128,7 @@ void wakeUp() {
 }
 
 
+
 void drawNum(uint8_t num, uint8_t num_len, const byte numbers[10][8], uint8_t x, uint8_t y) { // Функция для вывода цифр
   // Первый параметр - цифра, которую хотим вывести.
   // Второй параметр - цифра, которая указывает длину цифры(смотреть в digit.h)
@@ -154,16 +153,19 @@ void drawObject(const byte object[8], uint8_t w, uint8_t h, uint8_t x, uint8_t y
       matrix.drawPixel(x + c, y + r, object[r] & (1 << c));
     }
   }  
-
 }
 
 
 
-
 void showSett() {
-  if (sett_mode >= 3){
+  if (millis() - dots_timer > 500) {
+    dots_timer = millis();
+    show_dots = !show_dots;
+  }
+
+  if (sett_mode < 2){
     drawNum(set_hour / 10, 6, numbers, 0, 0);
-    drawNum(set_hour % 10, 6, numbers, 7, 0);
+    drawNum(set_hour % 10, 6, numbers, 7, 0);  
     drawNum(set_minute / 10, 6, numbers, 19, 0);
     drawNum(set_minute % 10, 6, numbers, 26, 0);
     matrix.drawRect(15, 1, 2, 2, HIGH);
@@ -180,8 +182,33 @@ void showSett() {
     drawNum((set_year - 2000) % 10, 4, small_numbers, 27, 0);
   }
 
+  if (show_dots) {
+    switch (sett_mode) {
+      case 0: {
+        matrix.fillRect(0, 0, 14, 8, LOW);
+      } break;
+      
+      case 1: {
+        matrix.fillRect(19, 0, 14, 8, LOW);
+      } break;
+
+      case 2: {
+        matrix.fillRect(0, 0, 10, 8, LOW);
+      } break;
+
+      case 3: {
+        matrix.fillRect(11, 0, 10, 8, LOW);
+      } break;
+
+      case 4: {
+        matrix.fillRect(22, 0, 10, 8, LOW);
+      } break;
+    }
+  }
+
   if (sett_mode > 4) {
     rtc.adjust(DateTime(set_year, set_month, set_day, set_hour, set_minute, set_second));
+    sett_mode = 0;
     is_setting = false;
     matrix.fillScreen(LOW);
   }
@@ -329,7 +356,7 @@ void loop() {
           matrix.fillScreen(LOW); // Выключаем дисплей
           matrix.write();
           attachInterrupt(0, wakeUp, HIGH); // Активируем прерывения на 2 пине
-          LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF); // Укладывем ардуинку спать
+          LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF); // Укладывем ардуинку спать
         }
       } break;
     }
