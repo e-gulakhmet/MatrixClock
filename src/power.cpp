@@ -47,7 +47,7 @@ float Power::readFilterVcc() {
         float tmp = 0.0;
         ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
         ADCSRA |= _BV(ADSC); // Start conversion
-        delay(5);
+        delay(25);
         while (bit_is_set(ADCSRA, ADSC)); // measuring
         uint8_t low = ADCL; // must read ADCL first - it then locks ADCH
         uint8_t high = ADCH; // unlocks both
@@ -85,7 +85,7 @@ float Power::readAnalog() {
     // read multiple values and sort them to take the mode
     int sortedValues[100];
     for (int i = 0; i < 100; i++) { 
-        delay(5);
+        delay(25);
         int value = analogRead(pin_);
         int j;
         if (value < sortedValues[0] || i == 0) {
