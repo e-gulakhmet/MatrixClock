@@ -31,11 +31,19 @@ DateTime time;
 bool show_dots;
 unsigned long disp_timer;
 unsigned long batt_timer;
-unsigned long bright_timer;
 unsigned long wait_timer;
 bool is_waiting;
 bool second_object;
 bool is_active = true;
+bool is_setting;
+uint8_t sett_mode;
+int set_year;
+uint8_t set_month;
+uint8_t set_day;
+uint8_t set_hour;
+uint8_t set_minute;
+uint8_t set_second;
+
 
 
 
@@ -56,21 +64,60 @@ MainMode switchMainMode(MainMode curr, bool clockwice) { // Переключен
 
 
 
+
+
 void rightButtClick() {
-  main_mode = switchMainMode(main_mode, true);
-  matrix.fillScreen(LOW);
+  if(!is_setting){
+    main_mode = switchMainMode(main_mode, true);
+    matrix.fillScreen(LOW);
+  }
+  else if (is_setting){
+    switch (sett_mode) {
+      case 0: set_day++; break;
+      case 1: set_month++; break;
+      case 2: set_year++; break;
+      case 3: set_hour++; break;
+      case 4: set_minute++; break;
+    }
+  }
 }
-
-
 
 void leftButtClick() {
-  main_mode = switchMainMode(main_mode, false);
-  matrix.fillScreen(LOW);
+  if (!is_setting) {
+    main_mode = switchMainMode(main_mode, false);
+    matrix.fillScreen(LOW);
+  }
+  else if (is_setting){
+    switch (sett_mode) {
+      case 0: set_day--; break;
+      case 1: set_month--; break;
+      case 2: set_year--; break;
+      case 3: set_hour--; break;
+      case 4: set_minute--; break;
+    }
+  }
 }
 
-
-
 void mainButtClick() {
+  if (is_setting) {
+    sett_mode++;
+    matrix.fillScreen(LOW);
+    matrix.write();
+  }
+}
+
+void mainButtLongPress() {
+  if ((main_mode == mmClock || main_mode == mmDate) && !is_setting) {
+    is_setting = true;
+    matrix.fillScreen(LOW);
+    matrix.write();
+    set_year = time.year();
+    set_month = time.month();
+    set_day = time.day();
+    set_hour = time.hour();
+    set_minute = time.minute();
+    set_second = time.second();
+  }
   
 }
 
@@ -108,6 +155,37 @@ void drawObject(const byte object[8], uint8_t w, uint8_t h, uint8_t x, uint8_t y
     }
   }  
 
+}
+
+
+
+
+void showSett() {
+  if (sett_mode >= 3){
+    drawNum(set_hour / 10, 6, numbers, 0, 0);
+    drawNum(set_hour % 10, 6, numbers, 7, 0);
+    drawNum(set_minute / 10, 6, numbers, 19, 0);
+    drawNum(set_minute % 10, 6, numbers, 26, 0);
+    matrix.drawRect(15, 1, 2, 2, HIGH);
+    matrix.drawRect(15, 5, 2, 2, HIGH);
+  }
+  else {
+    drawNum(set_day / 10, 4, small_numbers, 0, 0);
+    drawNum(set_day % 10, 4, small_numbers, 5, 0);
+    matrix.drawPixel(9, 7, HIGH);
+    drawNum(set_month / 10, 4, small_numbers, 11, 0);
+    drawNum(set_month % 10, 4, small_numbers, 16, 0);
+    matrix.drawPixel(20, 7, HIGH);
+    drawNum((set_year - 2000) / 10, 4, small_numbers, 22, 0);
+    drawNum((set_year - 2000) % 10, 4, small_numbers, 27, 0);
+  }
+
+  if (sett_mode > 4) {
+    rtc.adjust(DateTime(set_year, set_month, set_day, set_hour, set_minute, set_second));
+    is_setting = false;
+    matrix.fillScreen(LOW);
+  }
+  matrix.write();
 }
 
 
@@ -185,6 +263,7 @@ void setup() {
   left_butt.attachClick(leftButtClick);
   right_butt.attachClick(rightButtClick);
   main_butt.attachClick(mainButtClick);
+  main_butt.attachDuringLongPress(mainButtLongPress);
 
   if (! rtc.begin()) { // Подключаемся к ds3231
     Serial.println("Couldn't find RTC");
@@ -210,38 +289,49 @@ void loop() {
   if (millis() - batt_timer > 300000) { // Получаем данные о батареи раз в 5 минут
     batt_timer = millis();
     battery.update();
-  }  
-  if (millis() - disp_timer > 1000) {
-    disp_timer = millis();
-    time = rtc.now();
-    showDisp();
-    int brightness = analogRead(LIGHT_SENSOR_PIN);
-    if (brightness > 850 && brightness <= 1100) {
-      matrix.setIntensity(6);
-    }
-    else {
-      matrix.setIntensity(10);
-    }
   }
 
+  if (is_setting) {
+    showSett();
+  }
+
+  else {
+    if (millis() - disp_timer > 1000) {
+      disp_timer = millis();
+      time = rtc.now(); // Получаем время
+      showDisp(); // Выводим данные на дисплей
+
+      int brightness = analogRead(LIGHT_SENSOR_PIN);
+      if (brightness > 850 && brightness <= 1100) {
+        matrix.setIntensity(6);
+      }
+      else {
+        matrix.setIntensity(10);
+      }
+    }
+
+  }
+
+  // Если прошло 15 минут после выхода из сна и кнопка не была нажата
   if (is_waiting) {
     if (millis() - wait_timer > 900000) {
       wait_timer = millis();
+      // Меняем флаг, отвечающий за проверку выхода в сон
       is_waiting = false;
     }
   }
+
   else {
     switch (power_mode) {
       case pmPower: {
+        // Если время равно 0 и свет в комноте выключен
         if (time.hour() >= 0 && time.hour() <= 8 && analogRead(LIGHT_SENSOR_PIN) > 850) {
-          matrix.fillScreen(LOW);
+          matrix.fillScreen(LOW); // Выключаем дисплей
           matrix.write();
-          attachInterrupt(0, wakeUp, HIGH);
-          LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+          attachInterrupt(0, wakeUp, HIGH); // Активируем прерывения на 2 пине
+          LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF); // Укладывем ардуинку спать
         }
       } break;
     }
   }
-
-
 }
