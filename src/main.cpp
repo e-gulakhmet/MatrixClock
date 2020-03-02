@@ -40,7 +40,6 @@ bool is_setting;
 bool is_on = true;
 bool left_butt_press;
 uint8_t sett_mode;
-uint8_t wake_count;
 int set_year;
 uint8_t set_month;
 uint8_t set_day;
@@ -66,7 +65,7 @@ MainMode switchMainMode(MainMode curr, bool clockwice) { // Переключен
 
 
 
-void wakeUp() {
+void wakeUp() { // Функция выхода из сна при нажатии кнопки
   is_waiting = true;
   is_on = true;
   wait_timer = millis();
@@ -132,7 +131,8 @@ void leftButtClick() {
 }
 
 void mainButtClick() {
-  if (is_setting) {
+  if (is_setting) { // Если режим настроек активирован
+    // Следущий элент даты
     sett_mode++;
     matrix.fillScreen(LOW);
     matrix.write();
@@ -140,7 +140,10 @@ void mainButtClick() {
 }
 
 void mainButtLongPress() {
+  // Если центральная кнопка была нажата в течении двух секунд
+  // Если мы находимся в режиме часов или даты
   if ((main_mode == mmClock || main_mode == mmDate) && !is_setting) {
+    // Включаем режим настройки
     is_setting = true;
     matrix.fillScreen(LOW);
     matrix.write();
@@ -154,11 +157,11 @@ void mainButtLongPress() {
 }
 
 void leftButtLongStart() {
-  left_butt_press = true;
+  left_butt_press = true; // Гноворим, что левая кнопка нажата
 }
 
-void rightButtLongStart() {
-  if (left_butt_press) {
+void rightButtLongStart() { 
+  if (left_butt_press) { // Если левая кнопка нажата, то выключаем часы
     left_butt_press = false;
     is_on = false;
     matrix.fillScreen(LOW);
@@ -390,9 +393,9 @@ void loop() {
       }
       if (millis() - mode_switch_timer > 300000) {
         mode_switch_timer = millis();
-        switchMainMode(main_mode, true);
+        main_mode = switchMainMode(main_mode, true);
       }
-        // Если прошло 15 минут после выхода из сна и кнопка не была нажата
+      // Если прошло 15 минут после выхода из сна и кнопка не была нажата
       if (is_waiting) {
         if (millis() - wait_timer > 900000) {
           wait_timer = millis();
