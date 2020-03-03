@@ -139,7 +139,7 @@ void mainButtClick() {
   }
 }
 
-void mainButtLongPress() {
+void mainButtLongStart() {
   // Если центральная кнопка была нажата в течении двух секунд
   // Если мы находимся в режиме часов или даты
   if ((main_mode == mmClock || main_mode == mmDate) && !is_setting) {
@@ -156,11 +156,11 @@ void mainButtLongPress() {
   }
 }
 
-void leftButtLongStart() {
+void leftButtLongPress() {
   left_butt_press = true; // Гноворим, что левая кнопка нажата
 }
 
-void rightButtLongStart() { 
+void rightButtLongPress() { 
   if (left_butt_press) { // Если левая кнопка нажата, то выключаем часы
     left_butt_press = false;
     is_on = false;
@@ -202,130 +202,198 @@ void drawObject(const byte object[8], uint8_t w, uint8_t h, uint8_t x, uint8_t y
 
 
 void showSett() {
-  // Показываем данные при настройке
-  if (millis() - dots_timer > 500) {
-    dots_timer = millis();
-    show_dots = !show_dots;
-  }
+  // // Показываем данные при настройке
+  // if (millis() - dots_timer > 500) {
+  //   dots_timer = millis();
+  //   show_dots = !show_dots;
+  // }
 
-  // Показывем дынные о настройке времени
-  if (sett_mode < 2){
-    drawNum(set_hour / 10, 6, numbers, 0, 0);
-    drawNum(set_hour % 10, 6, numbers, 7, 0);  
-    drawNum(set_minute / 10, 6, numbers, 19, 0);
-    drawNum(set_minute % 10, 6, numbers, 26, 0);
-    matrix.drawRect(15, 1, 2, 2, HIGH);
-    matrix.drawRect(15, 5, 2, 2, HIGH);
-  }
-  // Показываем данные о настройке даты.
-  else {
-    drawNum(set_day / 10, 4, small_numbers, 0, 0);
-    drawNum(set_day % 10, 4, small_numbers, 5, 0);
-    matrix.drawPixel(9, 7, HIGH);
-    drawNum(set_month / 10, 4, small_numbers, 11, 0);
-    drawNum(set_month % 10, 4, small_numbers, 16, 0);
-    matrix.drawPixel(20, 7, HIGH);
-    drawNum((set_year - 2000) / 10, 4, small_numbers, 22, 0);
-    drawNum((set_year - 2000) % 10, 4, small_numbers, 27, 0);
-  }
+  // // Показывем дынные о настройке времени
+  // if (sett_mode < 2){
+  //   drawNum(set_hour / 10, 6, numbers, 0, 0);
+  //   drawNum(set_hour % 10, 6, numbers, 7, 0);  
+  //   drawNum(set_minute / 10, 6, numbers, 19, 0);
+  //   drawNum(set_minute % 10, 6, numbers, 26, 0);
+  //   matrix.drawRect(15, 1, 2, 2, HIGH);
+  //   matrix.drawRect(15, 5, 2, 2, HIGH);
+  // }
+  // // Показываем данные о настройке даты.
+  // else {
+  //   drawNum(set_day / 10, 4, small_numbers, 0, 0);
+  //   drawNum(set_day % 10, 4, small_numbers, 5, 0);
+  //   matrix.drawPixel(9, 7, HIGH);
+  //   drawNum(set_month / 10, 4, small_numbers, 11, 0);
+  //   drawNum(set_month % 10, 4, small_numbers, 16, 0);
+  //   matrix.drawPixel(20, 7, HIGH);
+  //   drawNum((set_year - 2000) / 10, 4, small_numbers, 22, 0);
+  //   drawNum((set_year - 2000) % 10, 4, small_numbers, 27, 0);
+  // }
 
-  // Моргаем выбранным элементом
-  if (show_dots) {
-    switch (sett_mode) {
-      case 0: {
-        matrix.fillRect(0, 0, 14, 8, LOW);
-      } break;
+  // // Моргаем выбранным элементом
+  // if (show_dots) {
+  //   switch (sett_mode) {
+  //     case 0: {
+  //       matrix.fillRect(0, 0, 14, 8, LOW);
+  //     } break;
       
-      case 1: {
-        matrix.fillRect(19, 0, 14, 8, LOW);
-      } break;
+  //     case 1: {
+  //       matrix.fillRect(19, 0, 14, 8, LOW);
+  //     } break;
 
-      case 2: {
-        matrix.fillRect(0, 0, 10, 8, LOW);
-      } break;
+  //     case 2: {
+  //       matrix.fillRect(0, 0, 10, 8, LOW);
+  //     } break;
 
-      case 3: {
-        matrix.fillRect(11, 0, 10, 8, LOW);
-      } break;
+  //     case 3: {
+  //       matrix.fillRect(11, 0, 10, 8, LOW);
+  //     } break;
 
-      case 4: {
-        matrix.fillRect(22, 0, 10, 8, LOW);
-      } break;
-    }
-  }
+  //     case 4: {
+  //       matrix.fillRect(22, 0, 10, 8, LOW);
+  //     } break;
+  //   }
+  // }
 
-  if (sett_mode > 4) { // Если закончили настраивать последний элемент
-    // Сохраняем измененные данные
-    rtc.adjust(DateTime(set_year, set_month, set_day, set_hour, set_minute, set_second));
-    sett_mode = 0;
-    is_setting = false;
-    matrix.fillScreen(LOW);
-  }
+  // if (sett_mode > 4) { // Если закончили настраивать последний элемент
+  //   // Сохраняем измененные данные
+  //   rtc.adjust(DateTime(set_year, set_month, set_day, set_hour, set_minute, set_second));
+  //   sett_mode = 0;
+  //   is_setting = false;
+  //   matrix.fillScreen(LOW);
+  // }
   matrix.write();
 }
 
 
 
 void showDisp() {
-  switch (main_mode) {
-    case mmClock: { // Выводим время на дисплей
-      if (rtc.begin()) { // Если модуль времени подключен
-        drawNum(time.hour() / 10, 6, numbers, 0, 0);
-        drawNum(time.hour() % 10, 6, numbers, 7, 0);
-        drawNum(time.minute() / 10, 6, numbers, 19, 0);
-        drawNum(time.minute() % 10, 6, numbers, 26, 0);
-        // Выводим точки
-        show_dots = !show_dots;
-        matrix.drawRect(15, 1, 2, 2, show_dots);
-        matrix.drawRect(15, 5, 2, 2, show_dots);
-      }
-      else { // Если модуль времени не подключен
-        matrix.print("ERROR");
-      }
-    }break;
-    
-    case mmDate: { // Выводим дату на матрицу
+  if (is_setting) {
+    // Показываем данные при настройке
+    if (millis() - dots_timer > 500) {
+      dots_timer = millis();
       show_dots = !show_dots;
-      drawNum(time.day() / 10, 4, small_numbers, 0, 0);
-      drawNum(time.day() % 10, 4, small_numbers, 5, 0);
-      matrix.drawPixel(9, 7, show_dots);
-      drawNum(time.month() / 10, 4, small_numbers, 11, 0);
-      drawNum(time.month() % 10, 4, small_numbers, 16, 0);
-      matrix.drawPixel(20, 7, show_dots);
-      drawNum((time.year() - 2000) / 10, 4, small_numbers, 22, 0);
-      drawNum((time.year() - 2000) % 10, 4, small_numbers, 27, 0);
-    }break;
+    }
 
-    case mmTemp: { // Выводим данные о погоде на матрицу
-      // Показываем температуру
-      drawNum(int(dht.readTemperature()) / 10, 4, small_numbers, 0, 0);
-      drawNum(int(dht.readTemperature()) % 10, 4, small_numbers, 5, 0);
-      drawObject(gradus, 3, 3, 10, 0);
-      drawObject(C, 4, 8, 14, 0);
-      second_object = !second_object;
-      // Показываем погоду по температуре
-      if (int(dht.readTemperature()) > 24) {
-        drawObject(sun[second_object], 7, 7, 21, 1);
-      }
-      else {
-        drawObject(cloud[second_object], 8, 8, 21, 0);
-      }
-    }break;
+    // Показывем дынные о настройке времени
+    if (sett_mode < 2){
+      drawNum(set_hour / 10, 6, numbers, 0, 0);
+      drawNum(set_hour % 10, 6, numbers, 7, 0);  
+      drawNum(set_minute / 10, 6, numbers, 19, 0);
+      drawNum(set_minute % 10, 6, numbers, 26, 0);
+      matrix.drawRect(15, 1, 2, 2, HIGH);
+      matrix.drawRect(15, 5, 2, 2, HIGH);
+    }
+    // Показываем данные о настройке даты.
+    else {
+      drawNum(set_day / 10, 4, small_numbers, 0, 0);
+      drawNum(set_day % 10, 4, small_numbers, 5, 0);
+      matrix.drawPixel(9, 7, HIGH);
+      drawNum(set_month / 10, 4, small_numbers, 11, 0);
+      drawNum(set_month % 10, 4, small_numbers, 16, 0);
+      matrix.drawPixel(20, 7, HIGH);
+      drawNum((set_year - 2000) / 10, 4, small_numbers, 22, 0);
+      drawNum((set_year - 2000) % 10, 4, small_numbers, 27, 0);
+    }
 
-    case mmPower: { // Выводим данные о батареи
-      if (battery.getProcent() == 100) {
-        drawNum(battery.getProcent() / 100, 4, small_numbers, 8, 0);
-        drawNum(0, 4, small_numbers, 13, 0);
-        drawNum(0, 4, small_numbers, 18, 0);
+    // Моргаем выбранным элементом
+    if (show_dots) {
+      switch (sett_mode) {
+        case 0: {
+          matrix.fillRect(0, 0, 14, 8, LOW);
+        } break;
+        
+        case 1: {
+          matrix.fillRect(19, 0, 14, 8, LOW);
+        } break;
+
+        case 2: {
+          matrix.fillRect(0, 0, 10, 8, LOW);
+        } break;
+
+        case 3: {
+          matrix.fillRect(11, 0, 10, 8, LOW);
+        } break;
+
+        case 4: {
+          matrix.fillRect(22, 0, 10, 8, LOW);
+        } break;
       }
-      else {
-        drawNum(battery.getProcent() / 10, 4, small_numbers, 8, 0);
-        drawNum(battery.getProcent() % 10, 4, small_numbers, 13, 0);
-      }
-        drawObject(procent, 6, 8, 18, 0);
-    }break;
+    }
+
+    if (sett_mode > 4) { // Если закончили настраивать последний элемент
+      // Сохраняем измененные данные
+      rtc.adjust(DateTime(set_year, set_month, set_day, set_hour, set_minute, set_second));
+      sett_mode = 0;
+      is_setting = false;
+      matrix.fillScreen(LOW);
+    }
+    matrix.write();
   }
-  matrix.write();
+
+  else {
+    if (millis() - disp_timer > 1000) {
+      switch (main_mode) {
+        case mmClock: { // Выводим время на дисплей
+          if (rtc.begin()) { // Если модуль времени подключен
+            drawNum(time.hour() / 10, 6, numbers, 0, 0);
+            drawNum(time.hour() % 10, 6, numbers, 7, 0);
+            drawNum(time.minute() / 10, 6, numbers, 19, 0);
+            drawNum(time.minute() % 10, 6, numbers, 26, 0);
+            // Выводим точки
+            show_dots = !show_dots;
+            matrix.drawRect(15, 1, 2, 2, show_dots);
+            matrix.drawRect(15, 5, 2, 2, show_dots);
+          }
+          else { // Если модуль времени не подключен
+            matrix.print("ERROR");
+          }
+        }break;
+        
+        case mmDate: { // Выводим дату на матрицу
+          show_dots = !show_dots;
+          drawNum(time.day() / 10, 4, small_numbers, 0, 0);
+          drawNum(time.day() % 10, 4, small_numbers, 5, 0);
+          matrix.drawPixel(9, 7, show_dots);
+          drawNum(time.month() / 10, 4, small_numbers, 11, 0);
+          drawNum(time.month() % 10, 4, small_numbers, 16, 0);
+          matrix.drawPixel(20, 7, show_dots);
+          drawNum((time.year() - 2000) / 10, 4, small_numbers, 22, 0);
+          drawNum((time.year() - 2000) % 10, 4, small_numbers, 27, 0);
+        }break;
+
+        case mmTemp: { // Выводим данные о погоде на матрицу
+          // Показываем температуру
+          drawNum(int(dht.readTemperature()) / 10, 4, small_numbers, 0, 0);
+          drawNum(int(dht.readTemperature()) % 10, 4, small_numbers, 5, 0);
+          drawObject(gradus, 3, 3, 10, 0);
+          drawObject(C, 4, 8, 14, 0);
+          second_object = !second_object;
+          // Показываем погоду по температуре
+          if (int(dht.readTemperature()) > 24) {
+            drawObject(sun[second_object], 7, 7, 21, 1);
+          }
+          else {
+            drawObject(cloud[second_object], 8, 8, 21, 0);
+          }
+        }break;
+
+        case mmPower: { // Выводим данные о батареи
+          if (battery.getProcent() == 100) {
+            drawNum(battery.getProcent() / 100, 4, small_numbers, 8, 0);
+            drawNum(0, 4, small_numbers, 13, 0);
+            drawNum(0, 4, small_numbers, 18, 0);
+          }
+          else {
+            drawNum(battery.getProcent() / 10, 4, small_numbers, 8, 0);
+            drawNum(battery.getProcent() % 10, 4, small_numbers, 13, 0);
+          }
+            drawObject(procent, 6, 8, 18, 0);
+        }break;
+        matrix.write();
+      }
+      disp_timer = millis();
+    }
+  }
 }
 
 
@@ -340,9 +408,9 @@ void setup() {
   left_butt.attachClick(leftButtClick);
   right_butt.attachClick(rightButtClick);
   main_butt.attachClick(mainButtClick);
-  main_butt.attachDuringLongPress(mainButtLongPress);
-  left_butt.attachLongPressStart(leftButtLongStart);
-  right_butt.attachLongPressStart(rightButtLongStart);
+  main_butt.attachLongPressStart(mainButtLongStart);
+  left_butt.attachDuringLongPress(leftButtLongPress);
+  right_butt.attachDuringLongPress(rightButtLongPress);
 
   if (! rtc.begin()) { // Подключаемся к ds3231
     Serial.println("Couldn't find RTC");
@@ -363,11 +431,22 @@ void setup() {
 
 void loop() {
   Serial.println(analogRead(PIR_SENSOR_PIN));
-  left_butt.tick();
-  main_butt.tick();
-  right_butt.tick();
+
 
   if(is_on) {
+    left_butt.tick();
+    main_butt.tick();
+    right_butt.tick();
+    time = rtc.now(); // Получаем время
+
+    int brightness = analogRead(LIGHT_SENSOR_PIN);
+    if (brightness > 850 && brightness <= 1100) {
+      matrix.setIntensity(3);
+    }
+    else {
+      matrix.setIntensity(10);
+    }
+
     if (millis() - batt_timer > 60000) { // Получаем данные о батареи раз в минуту
       batt_timer = millis();
       battery.update();
@@ -378,19 +457,6 @@ void loop() {
       showSett();
     }
     else {
-      if (millis() - disp_timer > 1000) {
-        disp_timer = millis();
-        time = rtc.now(); // Получаем время
-        showDisp(); // Выводим данные на дисплей
-
-        int brightness = analogRead(LIGHT_SENSOR_PIN);
-        if (brightness > 850 && brightness <= 1100) {
-          matrix.setIntensity(3);
-        }
-        else {
-          matrix.setIntensity(10);
-        }
-      }
       if (millis() - mode_switch_timer > 300000) {
         mode_switch_timer = millis();
         main_mode = switchMainMode(main_mode, true);
