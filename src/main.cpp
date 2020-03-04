@@ -26,6 +26,7 @@ Power battery(POWER_SENSOR_PIN);
 
 MainMode main_mode = mmClock;
 PowerMode power_mode = pmPower;
+ClockMode clock_mode = clStandart;
 DateTime time;
 
 bool show_dots;
@@ -201,71 +202,6 @@ void drawObject(const byte object[8], uint8_t w, uint8_t h, uint8_t x, uint8_t y
 
 
 
-void showSett() {
-  // // Показываем данные при настройке
-  // if (millis() - dots_timer > 500) {
-  //   dots_timer = millis();
-  //   show_dots = !show_dots;
-  // }
-
-  // // Показывем дынные о настройке времени
-  // if (sett_mode < 2){
-  //   drawNum(set_hour / 10, 6, numbers, 0, 0);
-  //   drawNum(set_hour % 10, 6, numbers, 7, 0);  
-  //   drawNum(set_minute / 10, 6, numbers, 19, 0);
-  //   drawNum(set_minute % 10, 6, numbers, 26, 0);
-  //   matrix.drawRect(15, 1, 2, 2, HIGH);
-  //   matrix.drawRect(15, 5, 2, 2, HIGH);
-  // }
-  // // Показываем данные о настройке даты.
-  // else {
-  //   drawNum(set_day / 10, 4, small_numbers, 0, 0);
-  //   drawNum(set_day % 10, 4, small_numbers, 5, 0);
-  //   matrix.drawPixel(9, 7, HIGH);
-  //   drawNum(set_month / 10, 4, small_numbers, 11, 0);
-  //   drawNum(set_month % 10, 4, small_numbers, 16, 0);
-  //   matrix.drawPixel(20, 7, HIGH);
-  //   drawNum((set_year - 2000) / 10, 4, small_numbers, 22, 0);
-  //   drawNum((set_year - 2000) % 10, 4, small_numbers, 27, 0);
-  // }
-
-  // // Моргаем выбранным элементом
-  // if (show_dots) {
-  //   switch (sett_mode) {
-  //     case 0: {
-  //       matrix.fillRect(0, 0, 14, 8, LOW);
-  //     } break;
-      
-  //     case 1: {
-  //       matrix.fillRect(19, 0, 14, 8, LOW);
-  //     } break;
-
-  //     case 2: {
-  //       matrix.fillRect(0, 0, 10, 8, LOW);
-  //     } break;
-
-  //     case 3: {
-  //       matrix.fillRect(11, 0, 10, 8, LOW);
-  //     } break;
-
-  //     case 4: {
-  //       matrix.fillRect(22, 0, 10, 8, LOW);
-  //     } break;
-  //   }
-  // }
-
-  // if (sett_mode > 4) { // Если закончили настраивать последний элемент
-  //   // Сохраняем измененные данные
-  //   rtc.adjust(DateTime(set_year, set_month, set_day, set_hour, set_minute, set_second));
-  //   sett_mode = 0;
-  //   is_setting = false;
-  //   matrix.fillScreen(LOW);
-  // }
-  matrix.write();
-}
-
-
-
 void showDisp() {
   if (is_setting) {
     // Показываем данные при настройке
@@ -334,15 +270,23 @@ void showDisp() {
     if (millis() - disp_timer > 1000) {
       switch (main_mode) {
         case mmClock: { // Выводим время на дисплей
-          if (rtc.begin()) { // Если модуль времени подключен
-            drawNum(time.hour() / 10, 6, numbers, 0, 0);
-            drawNum(time.hour() % 10, 6, numbers, 7, 0);
-            drawNum(time.minute() / 10, 6, numbers, 19, 0);
-            drawNum(time.minute() % 10, 6, numbers, 26, 0);
-            // Выводим точки
-            show_dots = !show_dots;
-            matrix.drawRect(15, 1, 2, 2, show_dots);
-            matrix.drawRect(15, 5, 2, 2, show_dots);
+          if (rtc.begin()) {
+            switch (clock_mode) {
+              case clStandart: {
+                
+              } break;
+
+              case clTime: {
+                drawNum(time.hour() / 10, 6, numbers, 0, 0);
+                drawNum(time.hour() % 10, 6, numbers, 7, 0);
+                drawNum(time.minute() / 10, 6, numbers, 19, 0);
+                drawNum(time.minute() % 10, 6, numbers, 26, 0);
+                // Выводим точки
+                show_dots = !show_dots;
+                matrix.drawRect(15, 1, 2, 2, show_dots);
+                matrix.drawRect(15, 5, 2, 2, show_dots);
+              } break;
+            }
           }
           else { // Если модуль времени не подключен
             matrix.print("ERROR");
@@ -430,7 +374,7 @@ void setup() {
 
 
 void loop() {
-  // Serial.println(analogRead(PIR_SENSOR_PIN));
+  Serial.println(analogRead(PIR_SENSOR_PIN));
 
 
   if(is_on) {
@@ -453,12 +397,15 @@ void loop() {
     }
 
     showDisp();
-    Serial.println(is_setting);
-
-    if (millis() - mode_switch_timer > 300000) {
-      mode_switch_timer = millis();
-      main_mode = switchMainMode(main_mode, true);
+    if (clock_mode == clTime) { // Автоматическое переключение режимов
+      if (millis() - mode_switch_timer > 300000) {
+        mode_switch_timer = millis();
+        main_mode = switchMainMode(main_mode, true);
+        matrix.fillScreen(LOW);
+        matrix.write();
+      }
     }
+
     // Если прошло 15 минут после выхода из сна и кнопка не была нажата
     if (is_waiting) {
       if (millis() - wait_timer > 900000) {

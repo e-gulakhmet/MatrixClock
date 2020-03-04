@@ -24,5 +24,10 @@ typedef enum {
     pmEco
 } PowerMode;
 
+typedef enum { // Режимы отображения времени
+    clStandart, // Выводит день недели, время и дату
+    clTime // Выводит только время
+} ClockMode;
+
 
 #endif // _MAIN_H_
