@@ -389,8 +389,8 @@ void showDisp() {
           }
             drawObject(procent, 6, 8, 18, 0);
         }break;
-        matrix.write();
       }
+      matrix.write();
       disp_timer = millis();
     }
   }
@@ -430,7 +430,7 @@ void setup() {
 
 
 void loop() {
-  Serial.println(analogRead(PIR_SENSOR_PIN));
+  // Serial.println(analogRead(PIR_SENSOR_PIN));
 
 
   if(is_on) {
@@ -452,22 +452,19 @@ void loop() {
       battery.update();
     }
 
+    showDisp();
+    Serial.println(is_setting);
 
-    if (is_setting) { // Если режим настроек активирован, показываем настройки
-      showSett();
+    if (millis() - mode_switch_timer > 300000) {
+      mode_switch_timer = millis();
+      main_mode = switchMainMode(main_mode, true);
     }
-    else {
-      if (millis() - mode_switch_timer > 300000) {
-        mode_switch_timer = millis();
-        main_mode = switchMainMode(main_mode, true);
-      }
-      // Если прошло 15 минут после выхода из сна и кнопка не была нажата
-      if (is_waiting) {
-        if (millis() - wait_timer > 900000) {
-          wait_timer = millis();
-          // Меняем флаг, отвечающий за проверку выхода в сон
-          is_waiting = false;
-        }
+    // Если прошло 15 минут после выхода из сна и кнопка не была нажата
+    if (is_waiting) {
+      if (millis() - wait_timer > 900000) {
+        wait_timer = millis();
+        // Меняем флаг, отвечающий за проверку выхода в сон
+        is_waiting = false;
       }
     }
   }
