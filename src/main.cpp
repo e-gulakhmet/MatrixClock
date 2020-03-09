@@ -376,6 +376,7 @@ void showDisp() {
             drawNum(0, 4, small_numbers, 10, 0);
           }
           else {
+            matrix.fillRect(0, 0, 5, 8, 0);
             drawNum(battery.getProcent() / 10, 4, small_numbers, 5, 0);
             drawNum(battery.getProcent() % 10, 4, small_numbers, 10, 0);
           }
