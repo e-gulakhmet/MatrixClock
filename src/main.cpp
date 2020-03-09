@@ -14,7 +14,6 @@
 #include "object.h"
 
 // TODO: Сделать эффект перехода между страницами
-// TODO: Добавить быстрое измение времени в настройках при долгом нажатии
 
 Max72xxPanel matrix = Max72xxPanel(MATRIX_CS_PIN, 1, 4);
 RTC_DS3231 rtc;
@@ -22,19 +21,19 @@ OneButton left_butt(LEFT_BUTT_PIN, false);
 OneButton right_butt(RIGHT_BUTT_PIN, false);
 OneButton main_butt(MAIN_BUTT_PIN, false);
 DHT dht(A1, DHT11); 
-Power battery(POWER_SENSOR_PIN);
+Power battery(POWER_SENSOR_PIN, BATTERY_SENSOR_PIN);
 
 MainMode main_mode = mmClock;
 PowerMode power_mode = pmPower;
-ClockMode clock_mode = clStandart;
+ClockMode clock_mode = clTime;
 DateTime time;
 
-bool show_dots;
 unsigned long disp_timer;
 unsigned long batt_timer;
 unsigned long wait_timer;
 unsigned long dots_timer;
 unsigned long mode_switch_timer;
+bool show_dots;
 bool is_waiting;
 bool second_object;
 bool is_setting;
@@ -158,17 +157,66 @@ void mainButtLongStart() {
 }
 
 void leftButtLongPress() {
-  left_butt_press = true; // Гноворим, что левая кнопка нажата
+  if (!is_setting) {
+    left_butt_press = true; // Говорим, что левая кнопка нажата
+  }  
+  else if (is_setting) {
+    switch (sett_mode) {
+      case 0: set_hour--; break;
+      case 1: set_minute--; break;
+      case 2: set_day--; break;
+      case 3: set_month--; break;
+      case 4: set_year--; break;
+    }
+    if (set_hour < 0) {
+      set_hour = 23;
+    }
+    if (set_minute < 0) {
+      set_minute = 59;
+    }
+    if (set_day < 1) {
+      set_day = 31;
+    }
+    if (set_month < 1) {
+      set_month = 12;
+    }
+    delay(100);
+  }
 }
 
 void rightButtLongPress() { 
-  if (left_butt_press) { // Если левая кнопка нажата, то выключаем часы
-    left_butt_press = false;
-    is_on = false;
-    matrix.fillScreen(LOW);
-    matrix.write();
-    attachInterrupt(0, wakeUp, HIGH); // Активируем прерывения на 2 пине
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); // Укладывем ардуинку спать
+  if (!is_setting) {
+    if (left_butt_press) { // Если левая кнопка нажата, то выключаем часы
+      left_butt_press = false;
+      is_on = false;
+      matrix.fillScreen(LOW);
+      matrix.write();
+      attachInterrupt(0, wakeUp, HIGH); // Активируем прерывения на 2 пине
+      LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); // Укладывем ардуинку спать
+    }
+  }
+
+  else if (is_setting){
+    switch (sett_mode) {
+      case 0: set_hour++; break;
+      case 1: set_minute++; break;
+      case 2: set_day++; break;
+      case 3: set_month++; break;
+      case 4: set_year++; break;
+    }
+    if (set_hour > 23) {
+      set_hour = 0;
+    }
+    if (set_minute > 59) {
+      set_minute = 0;
+    }
+    if (set_day > 31) {
+      set_day = 1;
+    }
+    if (set_month > 12) {
+      set_month = 1;
+    }
+    delay(100);
   }
 }
 
@@ -322,16 +370,17 @@ void showDisp() {
         }break;
 
         case mmPower: { // Выводим данные о батареи
-          if (battery.getProcent() == 100) {
-            drawNum(battery.getProcent() / 100, 4, small_numbers, 8, 0);
-            drawNum(0, 4, small_numbers, 13, 0);
-            drawNum(0, 4, small_numbers, 18, 0);
+          if (battery.getProcent() >= 100) {
+            drawNum(battery.getProcent() / 100, 4, small_numbers, 0, 0);
+            drawNum(0, 4, small_numbers, 5, 0);
+            drawNum(0, 4, small_numbers, 10, 0);
           }
           else {
-            drawNum(battery.getProcent() / 10, 4, small_numbers, 8, 0);
-            drawNum(battery.getProcent() % 10, 4, small_numbers, 13, 0);
+            drawNum(battery.getProcent() / 10, 4, small_numbers, 5, 0);
+            drawNum(battery.getProcent() % 10, 4, small_numbers, 10, 0);
           }
-            drawObject(procent, 6, 8, 18, 0);
+            drawObject(procent, 6, 8, 15, 0);
+            drawObject(power[battery.isCharging()], 8, 8, 24, 0);
         }break;
       }
       matrix.write();
@@ -344,7 +393,6 @@ void showDisp() {
 
 void setup() {
   Serial.begin(9600);
-  pinMode(POWER_SENSOR_PIN, INPUT);
   pinMode(LIGHT_SENSOR_PIN, INPUT);
   pinMode(MAIN_BUTT_PIN, INPUT);
   pinMode(PIR_SENSOR_PIN, INPUT);
@@ -374,14 +422,16 @@ void setup() {
 
 
 void loop() {
-  Serial.println(analogRead(PIR_SENSOR_PIN));
-
-
   if(is_on) {
     left_butt.tick();
     main_butt.tick();
     right_butt.tick();
     time = rtc.now(); // Получаем время
+    if (millis() - batt_timer > 60000) { // Получаем данные о батареи раз в минуту
+      batt_timer = millis();
+      battery.update();
+    }
+    showDisp();
 
     int brightness = analogRead(LIGHT_SENSOR_PIN);
     if (brightness > 850 && brightness <= 1100) {
@@ -391,12 +441,6 @@ void loop() {
       matrix.setIntensity(10);
     }
 
-    if (millis() - batt_timer > 60000) { // Получаем данные о батареи раз в минуту
-      batt_timer = millis();
-      battery.update();
-    }
-
-    showDisp();
     if (clock_mode == clTime) { // Автоматическое переключение режимов
       if (millis() - mode_switch_timer > 300000) {
         mode_switch_timer = millis();
@@ -438,6 +482,10 @@ void loop() {
         matrix.write();
         attachInterrupt(0, wakeUp, HIGH); // Активируем прерывения на 2 пине
         LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); // Укладывем ардуинку спать
+      } break;
+
+      case pmEco: {
+
       } break;
     }
   }

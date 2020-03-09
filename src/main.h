@@ -7,7 +7,8 @@ const uint8_t LEFT_BUTT_PIN = 4;
 const uint8_t MAIN_BUTT_PIN = 2;
 const uint8_t RIGHT_BUTT_PIN = 8;
 const uint8_t MATRIX_CS_PIN = 10;
-const uint8_t POWER_SENSOR_PIN = A3;
+const uint8_t BATTERY_SENSOR_PIN = A3;
+const uint8_t POWER_SENSOR_PIN = A2;
 const uint8_t LIGHT_SENSOR_PIN = A0;
 const uint8_t PIR_SENSOR_PIN = 3;
 
